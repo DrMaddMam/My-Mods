@@ -1,0 +1,66 @@
+Default (GPT-3.5)
+Custom instructions details
+
+User
+Balloon Gamemode "using System;
+using BepInEx;
+using Utilla;
+using UnityEngine;
+
+namespace BalloonHittingGamemode
+{
+    [BepInPlugin("com.example.balloonhittinggamemode", "Balloon Hitting Gamemode", "1.0.0")]
+    [BepInDependency("org.legoandmars.gorillatag.utilla", "1.5.0")]
+    [BepInDependency("com.example.gorillacosmetics", "1.0.0")]
+    [ModdedGamemode]
+    public class BalloonHittingGame : BaseUnityPlugin
+    {
+        private HoldableBalloon holdableBalloon; // Modify to use your HoldableBalloon class
+        private Goal goal;
+
+        private void Awake()
+        {
+            // Initialize your gamemode components (e.g., balloons and goal)
+            holdableBalloon = FindObjectOfType<HoldableBalloon>(); // Modify to find your holdable balloon
+            goal = FindObjectOfType<Goal>();
+
+            // Subscribe to the event when a player joins a room
+            Utilla.Events.RoomJoined += OnRoomJoined;
+        }
+
+        private void OnRoomJoined(object sender, Events.RoomJoinedArgs e)
+        {
+            if (!e.isPrivate)
+            {
+                // Do nothing if not in a modded room
+                return;
+            }
+
+            // Register your gamemode rules here
+            // You might want to track scores and check for goals here
+
+            // Example: Subscribe to the event when a balloon enters the goal
+            goal.OnBalloonEnteredGoal += OnBalloonEnteredGoal;
+
+            // Apply the back cosmetic to the player holding the balloon
+            ApplyBackCosmeticToPlayer(holdableBalloon.holder); // Modify to use your HoldableBalloon logic
+        }
+
+        private void ApplyBackCosmeticToPlayer(Player player)
+        {
+            // Use the Gorilla Cosmetics API to apply the back cosmetic to the player
+            // For example, if you have a cosmetic called "BalloonBackCosmetic," you can apply it like this:
+            GorillaCosmetics.API.AddCosmeticToPlayer("BalloonBackCosmetic", player);
+        }
+
+        private void OnBalloonEnteredGoal(Balloon balloon)
+        {
+            // Implement your scoring logic here
+        }
+
+        private void OnDestroy()
+        {
+            Utilla.Events.RoomJoined -= OnRoomJoined;
+        }
+    }
+}
