@@ -1,0 +1,124 @@
+using BepInEx;
+using UnityEngine;
+using System.Collections.Generic;
+using System.Reflection;
+using BepInEx.Configuration;
+using HarmonyLib;
+
+namespace ModManager
+{
+    [BepInPlugin("com.example.modmanager", "Mod Manager", "1.0.0")]
+    public class ModManagerPlugin : BaseUnityPlugin
+    {
+        private static ModManagerPlugin instance;
+        private static Harmony harmony;
+        private static List<ModInfo> installedMods = new List<ModInfo>();
+        private ConfigEntry<bool> isEnabled;
+
+        void Awake()
+        {
+            instance = this;
+            harmony = new Harmony("com.example.modmanager");
+            isEnabled = Config.Bind("Settings", "Enabled", true, "Enable/Disable the Mod Manager");
+            if (isEnabled.Value)
+            {
+                RegisterCommands();
+                UpdateInstalledMods();
+            }
+        }
+
+        private void RegisterCommands()
+        {
+            ChatCommand.AddCommand("enablemod", "Enable a mod by name.", EnableMod);
+            ChatCommand.AddCommand("disablemod", "Disable a mod by name.", DisableMod);
+            ChatCommand.AddCommand("listmods", "List all installed mods.", ListMods);
+        }
+
+        private void UpdateInstalledMods()
+        {
+            var bepinExDir = Paths.BepInExRootPath;
+            var pluginsDir = Path.Combine(bepinExDir, "plugins");
+            var files = Directory.GetFiles(pluginsDir, "*.dll");
+
+            foreach (var file in files)
+            {
+                try
+                {
+                    var modInfo = Assembly.LoadFrom(file).GetCustomAttribute<BepInPlugin>();
+                    if (modInfo != null)
+                    {
+                        installedMods.Add(new ModInfo
+                        {
+                            Name = modInfo.Name,
+                            Guid = modInfo.GUID,
+                            Enabled = true // You can set the initial state here.
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"Failed to load mod from file {file}: {ex.Message}");
+                }
+            }
+        }
+
+        private void EnableMod(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: enablemod <mod_name>");
+                return;
+            }
+
+            string modName = args[1];
+            var mod = installedMods.Find(m => m.Name.Equals(modName, StringComparison.OrdinalIgnoreCase));
+            if (mod != null)
+            {
+                mod.Enabled = true;
+                Console.WriteLine($"{modName} enabled.");
+            }
+            else
+            {
+                Console.WriteLine($"Mod {modName} not found.");
+            }
+        }
+
+        private void DisableMod(string[] args)
+        {
+            if (args.Length < 2)
+            {
+                Console.WriteLine("Usage: disablemod <mod_name>");
+                return;
+            }
+
+            string modName = args[1];
+            var mod = installedMods.Find(m => m.Name.Equals(modName, StringComparison.OrdinalIgnoreCase));
+            if (mod != null)
+            {
+                mod.Enabled = false;
+                Console.WriteLine($"{modName} disabled.");
+            }
+            else
+            {
+                Console.WriteLine($"Mod {modName} not found.");
+            }
+        }
+
+        private void ListMods(string[] args)
+        {
+            Console.WriteLine("Installed Mods:");
+            foreach (var mod in installedMods)
+            {
+                string status = mod.Enabled ? "Enabled" : "Disabled";
+                Console.WriteLine($"{mod.Name} ({mod.Guid}) - {status}");
+            }
+        }
+    }
+
+    public class ModInfo
+    {
+        public string Name { get; set; }
+        public string Guid { get; set; }
+        public bool Enabled { get; set; }
+    }
+}
