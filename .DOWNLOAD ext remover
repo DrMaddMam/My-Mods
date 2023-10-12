@@ -1,0 +1,39 @@
+using System;
+using System.IO;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Console.WriteLine("Enter the directory path containing .download files:");
+        string directoryPath = Console.ReadLine();
+
+        if (Directory.Exists(directoryPath))
+        {
+            ProcessDirectory(directoryPath);
+            Console.WriteLine("File extensions removed successfully.");
+        }
+        else
+        {
+            Console.WriteLine("Directory not found. Please check the directory path.");
+        }
+    }
+
+    static void ProcessDirectory(string directoryPath)
+    {
+        string[] files = Directory.GetFiles(directoryPath, "*.download");
+
+        foreach (string filePath in files)
+        {
+            string newFilePath = Path.ChangeExtension(filePath, null);
+            File.Move(filePath, newFilePath);
+            Console.WriteLine($"Removed .download extension from {Path.GetFileName(filePath)}");
+        }
+
+        string[] subdirectories = Directory.GetDirectories(directoryPath);
+        foreach (string subdirectory in subdirectories)
+        {
+            ProcessDirectory(subdirectory);
+        }
+    }
+}
