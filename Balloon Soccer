@@ -1,8 +1,4 @@
-Default (GPT-3.5)
-Custom instructions details
-
-User
-Balloon Gamemode "using System;
+using System;
 using BepInEx;
 using Utilla;
 using UnityEngine;
